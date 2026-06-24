@@ -555,7 +555,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: Login with
+  m_text: Or Login With
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: e1c16bf9d28530b4bbe270080e039fe6, type: 2}
   m_sharedMaterial: {fileID: -5578932286012621620, guid: e1c16bf9d28530b4bbe270080e039fe6, type: 2}
