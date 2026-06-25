@@ -61,7 +61,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.8867924, g: 0.8867924, b: 0.8867924, a: 1}
+  m_Color: {r: 0.07058824, g: 0.06666667, b: 0.101960786, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -178,8 +178,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4279900698
-  m_fontColor: {r: 0.103773594, g: 0.103773594, b: 0.103773594, a: 1}
+    rgba: 4284928511
+  m_fontColor: {r: 1, g: 0.81960785, b: 0.4, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
@@ -453,7 +453,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3143178243502666874, guid: d54c1bd757d0fbd44b3f8d2f79d197c2, type: 3}
       propertyPath: m_fontSize
-      value: 69.95
+      value: 65.05
       objectReference: {fileID: 0}
     - target: {fileID: 3655311589568996025, guid: d54c1bd757d0fbd44b3f8d2f79d197c2, type: 3}
       propertyPath: m_AnchorMax.y

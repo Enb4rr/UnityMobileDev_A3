@@ -61,7 +61,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.103773594, g: 0.103773594, b: 0.103773594, a: 1}
+  m_Color: {r: 0, g: 0.83137256, b: 0.6666667, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -216,8 +216,8 @@ MonoBehaviour:
   m_fontMaterials: []
   m_fontColor32:
     serializedVersion: 2
-    rgba: 4293388263
-  m_fontColor: {r: 0.9056604, g: 0.9056604, b: 0.9056604, a: 1}
+    rgba: 4279898386
+  m_fontColor: {r: 0.07058824, g: 0.06666667, b: 0.101960786, a: 1}
   m_enableVertexGradient: 0
   m_colorMode: 3
   m_fontColorGradient:
