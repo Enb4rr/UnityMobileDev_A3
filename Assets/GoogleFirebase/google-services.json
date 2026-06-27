@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1018292918451",
+    "project_id": "mobiledeva3-3d5aa",
+    "storage_bucket": "mobiledeva3-3d5aa.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1018292918451:android:5ab102e96c37a4707ef8c6",
+        "android_client_info": {
+          "package_name": "com.colomobile.playcol"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1018292918451-t9uvltu2dsnspclpmml7h58cfaes1csn.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDI2GakXTPMtdj1g6z6jvlauIBHandA2bE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1018292918451-t9uvltu2dsnspclpmml7h58cfaes1csn.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
