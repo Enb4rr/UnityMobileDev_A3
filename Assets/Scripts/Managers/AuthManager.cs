@@ -26,9 +26,6 @@ namespace Managers
         [SerializeField] private GameObject introPanel;
         [SerializeField] private GameObject userPanel;
         [SerializeField] private GameObject menuPanel;
-        
-        [Header("UI User Information")]
-        [SerializeField] private TMP_Text usernameText;
 
         [Header("UI Change Password")] 
         [SerializeField] private TMP_InputField changePasswordInputField;
@@ -45,8 +42,11 @@ namespace Managers
 
                 if (CheckCurrentUser())
                 {
-                    
-                    usernameText.text = Auth.CurrentUser.Email;
+                    if (!await UserDataManager.Instance.IsUserInFirestore(Auth.CurrentUser.UserId))
+                    {
+                        await UserDataManager.Instance.CreatePlayerProfileAsync(Auth.CurrentUser.Email, GetUsernameFromEmail(Auth.CurrentUser.Email));
+                    }
+                    UserDataManager.Instance.InitializeListeners(Auth.CurrentUser.UserId);
                 }
                 else
                 {
@@ -94,6 +94,11 @@ namespace Managers
             try
             {
                 await LoginEmailPasswordAsync(emailLoginInputField.text, passwordLoginInputField.text);
+                
+                if (!await UserDataManager.Instance.IsUserInFirestore(Auth.CurrentUser.UserId))
+                {
+                    await UserDataManager.Instance.CreatePlayerProfileAsync(Auth.CurrentUser.Email, GetUsernameFromEmail(Auth.CurrentUser.Email));
+                }
             }
             catch (Exception e)
             {
@@ -108,6 +113,7 @@ namespace Managers
             try
             {
                 await RegisterEmailPasswordAsync(emailRegisterInputField.text, passwordRegisterInputField.text);
+                await UserDataManager.Instance.CreatePlayerProfileAsync(Auth.CurrentUser.Email, GetUsernameFromEmail(Auth.CurrentUser.Email));
             }
             catch (Exception e)
             {
@@ -115,7 +121,7 @@ namespace Managers
             }
         }
         
-        public async void GoogleLoginButton()
+        public async Task GoogleLoginButton()
         {
 #if UNITY_EDITOR
             Debug.LogError("Google Login Button Not Supported");
@@ -125,7 +131,7 @@ namespace Managers
             await LoginWithGoogleAsync();
         }
 
-        public async void UpdatePasswordButton()
+        public async Task UpdatePasswordButton()
         {
             FirebaseUser user = Auth.CurrentUser;
             
@@ -162,8 +168,8 @@ namespace Managers
             try
             {
                 AuthResult result = await Auth.SignInWithEmailAndPasswordAsync(email, password);
+                UserDataManager.Instance.InitializeListeners(Auth.CurrentUser.Email);
                 LoadMenuPanel();
-                usernameText.text = Auth.CurrentUser.Email;
             }
             catch (Exception e)
             {
@@ -176,8 +182,8 @@ namespace Managers
             try
             {
                 AuthResult result = await Auth.CreateUserWithEmailAndPasswordAsync(email, password);
+                UserDataManager.Instance.InitializeListeners(Auth.CurrentUser.Email);
                 LoadMenuPanel();
-                usernameText.text = Auth.CurrentUser.Email;
             }
             catch (Exception e)
             {
@@ -191,7 +197,7 @@ namespace Managers
             LoadLoginPanel();
         }
 
-        public bool CheckCurrentUser()
+        private bool CheckCurrentUser()
         {
             return Auth.CurrentUser != null;
         }
@@ -234,6 +240,11 @@ namespace Managers
             }
 
             return true;
+        }
+
+        private string GetUsernameFromEmail(string email)
+        {
+            return email.Contains("@") ? email.Split('@')[0] : null;
         }
 
         private void LoadLoginPanel()
