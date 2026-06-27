@@ -7,6 +7,7 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Google;
+using UI;
 
 namespace Managers
 {
@@ -28,7 +29,7 @@ namespace Managers
         [SerializeField] private GameObject menuPanel;
 
         [Header("UI Change Password")] 
-        [SerializeField] private TMP_InputField changePasswordInputField;
+        [SerializeField] private AlertPanel alertPanel;
 
         public FirebaseAuth Auth { get; private set; }
         private GoogleSignInConfiguration googleConfig;
@@ -42,11 +43,12 @@ namespace Managers
 
                 if (CheckCurrentUser())
                 {
-                    if (!await UserDataManager.Instance.IsUserInFirestore(Auth.CurrentUser.UserId))
+                    if (!await UserDataManager.Instance.IsUserInFirestore(Auth.CurrentUser.Email))
                     {
                         await UserDataManager.Instance.CreatePlayerProfileAsync(Auth.CurrentUser.Email, GetUsernameFromEmail(Auth.CurrentUser.Email));
                     }
-                    UserDataManager.Instance.InitializeListeners(Auth.CurrentUser.UserId);
+                    UserDataManager.Instance.InitializeListeners(Auth.CurrentUser.Email);
+                    LoadMenuPanel();
                 }
                 else
                 {
@@ -95,7 +97,7 @@ namespace Managers
             {
                 await LoginEmailPasswordAsync(emailLoginInputField.text, passwordLoginInputField.text);
                 
-                if (!await UserDataManager.Instance.IsUserInFirestore(Auth.CurrentUser.UserId))
+                if (!await UserDataManager.Instance.IsUserInFirestore(Auth.CurrentUser.Email))
                 {
                     await UserDataManager.Instance.CreatePlayerProfileAsync(Auth.CurrentUser.Email, GetUsernameFromEmail(Auth.CurrentUser.Email));
                 }
@@ -131,26 +133,29 @@ namespace Managers
             await LoginWithGoogleAsync();
         }
 
-        public async Task UpdatePasswordButton()
+        public void UpdatePasswordButton()
         {
-            FirebaseUser user = Auth.CurrentUser;
-            
-            if (user == null) return;
-            
-            await user.UpdatePasswordAsync(changePasswordInputField.text).ContinueWith(task =>
+            alertPanel.ShowAlert("Change Password", "Type your new password", async () =>
             {
-                if (task.IsCanceled)
+                FirebaseUser user = Auth.CurrentUser;
+            
+                if (user == null) return;
+            
+                await user.UpdatePasswordAsync(alertPanel.InputField.text).ContinueWith(task =>
                 {
-                    Debug.LogError("Google Login Button Cancelled");
-                    return;
-                }
-                if (task.IsFaulted)
-                {
-                    Debug.LogError($"Error changing the password, {task.Exception}");
-                    return;
-                }
+                    if (task.IsCanceled)
+                    {
+                        Debug.LogError("Google Login Button Cancelled");
+                        return;
+                    }
+                    if (task.IsFaulted)
+                    {
+                        Debug.LogError($"Error changing the password, {task.Exception}");
+                        return;
+                    }
                 
-                Debug.Log("Password changed successfully!");
+                    Debug.Log("Password changed successfully!");
+                });
             });
         }
         

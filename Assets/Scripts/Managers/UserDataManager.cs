@@ -2,24 +2,35 @@ using System;
 using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Badges;
 using Firebase;
 using Firebase.Auth;
 using Firebase.Firestore;
 using TMPro;
+using UI;
 using UnityEngine;
+using UnityEngine.Networking;
 using UnityEngine.UI;
 
 namespace Managers
 {
     public class UserDataManager : BasePersistentManager<UserDataManager>
     {
-        [Header("UI User Information")]
-        [SerializeField] private TMP_Text usernameText;
+        [Header("UI User Information")] [SerializeField]
+        private TMP_Text usernameText;
+
         [SerializeField] private Image profilePhoto;
-        
+        [SerializeField] private List<GameObject> badges;
+        [SerializeField] private GameObject badgePrefab;
+        [SerializeField] private GameObject badgesParent;
+
+        [Header("UI Change Username")] [SerializeField]
+        private AlertPanel alertPanel;
+
         private FirebaseFirestore db;
         private ListenerRegistration usernameListener;
         private ListenerRegistration profilePhotoListener;
+        private ListenerRegistration badgesListener;
 
         private async void Start()
         {
@@ -39,7 +50,7 @@ namespace Managers
 
             if (status == DependencyStatus.Available)
             {
-                db = FirebaseFirestore.DefaultInstance;                
+                db = FirebaseFirestore.DefaultInstance;
             }
         }
 
@@ -52,9 +63,9 @@ namespace Managers
                 Badges = new List<BadgeData>(),
                 MaxOwnGameScore = 0,
             };
-            
+
             DocumentReference userRef = db.Collection("Users").Document(email);
-            
+
             await userRef.SetAsync(newUser).ContinueWith(task =>
             {
                 if (task.IsCanceled || task.IsFaulted)
@@ -62,13 +73,6 @@ namespace Managers
                     Debug.LogError(task.Exception);
                 }
             });
-            
-            //SetImageInFirestore(email);
-        }
-
-        private void SetImageInFirestore(string email)
-        {
-            
         }
 
         public async Task<bool> IsUserInFirestore(string uid)
@@ -96,10 +100,49 @@ namespace Managers
                 {
                     string newProfilePhoto = snapshot.GetValue<string>("ProfilePhoto");
                     Texture2D newTexture = FromStringToTextureConverter(newProfilePhoto, profilePhoto.sprite.texture);
-                    Sprite imageSprite = Sprite.Create(newTexture, new Rect(0, 0, newTexture.width, newTexture.height), new Vector2(0.5f, 0.5f));
+                    Sprite imageSprite = Sprite.Create(newTexture, new Rect(0, 0, newTexture.width, newTexture.height),
+                        new Vector2(0.5f, 0.5f));
                     profilePhoto.sprite = imageSprite;
                 }
             });
+            badgesListener = usernameRef.Listen(async snapshot =>
+            {
+                if (snapshot.Exists)
+                {
+                    foreach (GameObject badge in badges) Destroy(badge);
+                    badges.Clear();
+                    
+                    List<BadgeData> badgesFromFirestore = snapshot.GetValue<List<BadgeData>>("Badges");
+                    foreach (BadgeData t in badgesFromFirestore)
+                    {
+                        GameObject newBadget = Instantiate(badgePrefab, badgesParent.transform);
+                        newBadget.TryGetComponent(out Badge badge);
+                        badge.UpdateBadgeInfo(t.BadgeName);
+                        badges.Add(newBadget);
+                        
+                        // TODO: Change with the URL
+                        //badges[i].BadgeImage.sprite = await DownloadSprite(badgesFromFirestore[i].BadgeName);
+                    }
+                }
+            });
+        }
+
+        private async Task<Sprite> DownloadSprite(string url)
+        {
+            using UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
+
+            var operation = request.SendWebRequest();
+
+            while (!operation.isDone) await Task.Yield();
+
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                Debug.LogError(request.error);
+                return null;
+            }
+
+            Texture2D texture = DownloadHandlerTexture.GetContent(request);
+            return Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
         }
 
         private string FromTextureToStringConverter(Texture2D texture)
@@ -134,35 +177,43 @@ namespace Managers
 
         public async void SetProfilePhotoInFirestore(string newProfilePhoto)
         {
-            DocumentReference profilePhotoRef = db.Collection("Users").Document(AuthManager.Instance.Auth.CurrentUser.Email).Collection("ProfilePhoto").Document();
-            await profilePhotoRef.SetAsync(FromTextureToStringConverter(profilePhoto.sprite.texture));
+            DocumentReference profilePhotoRef = db.Collection("Users").Document(AuthManager.Instance.Auth.CurrentUser.Email);
+            await profilePhotoRef.UpdateAsync("ProfilePhoto", FromTextureToStringConverter(profilePhoto.sprite.texture));
+        }
+
+        public void ChangeUsernameButton()
+        {
+            alertPanel.ShowAlert("Change Username", "Type a new username!", () => SetUsernameInFirestore(alertPanel.InputField.text));
         }
 
         public async void SetBadgeInFirestore(BadgeData badgeData)
         {
-            DocumentReference badgesRef = db.Collection("Users").Document(AuthManager.Instance.Auth.CurrentUser.Email).Collection("Badges").Document();
+            DocumentReference badgesRef = db.Collection("Users").Document(AuthManager.Instance.Auth.CurrentUser.Email);
 
             await db.RunTransactionAsync(async transaction =>
             {
                 DocumentSnapshot snapshot = await transaction.GetSnapshotAsync(badgesRef);
-                List<BadgeData> firestoreList = snapshot.GetValue<List<BadgeData>>("Badges");
-                int listIndex = firestoreList.IndexOf(badgeData);
-                if (listIndex != -1) firestoreList[listIndex] = badgeData;
-                
-                transaction.Update(badgesRef, "Badges", firestoreList);
+
+                if (snapshot.Exists)
+                {
+                    List<BadgeData> badges = new List<BadgeData>();
+                    badges = snapshot.GetValue<List<BadgeData>>("Badges");
+                    badges.Add(badgeData);
+                    transaction.Update(badgesRef, "Badges", badges);
+                }
             });
         }
 
         public async void SetMaxScoreInFirestore(int maxOwnGameScore)
         {
-            DocumentReference maxScoreRef = db.Collection("Users").Document(AuthManager.Instance.Auth.CurrentUser.Email).Collection("MaxOwnGameScore").Document();
-            await maxScoreRef.SetAsync(maxOwnGameScore);
+            DocumentReference maxScoreRef = db.Collection("Users").Document(AuthManager.Instance.Auth.CurrentUser.Email);
+            await maxScoreRef.UpdateAsync("MaxOwnGameScore", maxOwnGameScore);
         }
 
         public async void SetUsernameInFirestore(string newUsername)
         {
-            DocumentReference maxScoreRef = db.Collection("Users").Document(AuthManager.Instance.Auth.CurrentUser.Email).Collection("Username").Document();
-            await maxScoreRef.SetAsync(newUsername);
+            DocumentReference maxScoreRef = db.Collection("Users").Document(AuthManager.Instance.Auth.CurrentUser.Email);
+            await maxScoreRef.UpdateAsync("Username", newUsername);
         }
 
         private void OnDestroy()
@@ -175,26 +226,20 @@ namespace Managers
     [FirestoreData]
     public class UserData
     {
-        [FirestoreProperty]
-        public string Username { get; set; }
-        
-        [FirestoreProperty]
-        public string ProfilePhoto { get; set; }
-        
-        [FirestoreProperty]
-        public List<BadgeData> Badges { get; set; }
-        
-        [FirestoreProperty]
-        public int MaxOwnGameScore { get; set; }
+        [FirestoreProperty] public string Username { get; set; }
+        [FirestoreProperty] public string ProfilePhoto { get; set; }
+        [FirestoreProperty] public List<BadgeData> Badges { get; set; }
+        [FirestoreProperty] public int MaxOwnGameScore { get; set; }
     }
 
     [FirestoreData]
     public class BadgeData
     {
-        [FirestoreProperty]
-        public int BadgeID { get; set; }
-        
-        [FirestoreProperty]
-        public string BadgeName { get; set; }
+        [FirestoreProperty] public int BadgeID { get; set; }
+        [FirestoreProperty] public string BadgeName { get; set; }
+
+        public BadgeData()
+        {
+        }
     }
 }
