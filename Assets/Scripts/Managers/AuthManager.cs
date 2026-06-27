@@ -175,6 +175,7 @@ namespace Managers
                 AuthResult result = await Auth.SignInWithEmailAndPasswordAsync(email, password);
                 UserDataManager.Instance.InitializeListeners(Auth.CurrentUser.Email);
                 LoadMenuPanel();
+                await LeaderboardManager.Instance.SignUpWithUsernamePasswordAsync(email, password);
             }
             catch (Exception e)
             {
@@ -189,6 +190,7 @@ namespace Managers
                 AuthResult result = await Auth.CreateUserWithEmailAndPasswordAsync(email, password);
                 UserDataManager.Instance.InitializeListeners(Auth.CurrentUser.Email);
                 LoadMenuPanel();
+                await LeaderboardManager.Instance.SignUpWithUsernamePasswordAsync(email, password);
             }
             catch (Exception e)
             {

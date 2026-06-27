@@ -235,8 +235,15 @@ namespace Managers
     [FirestoreData]
     public class BadgeData
     {
-        [FirestoreProperty] public int BadgeID { get; set; }
-        [FirestoreProperty] public string BadgeName { get; set; }
+        [FirestoreProperty]
+        public int BadgeID { get; set; }
+        
+        [FirestoreProperty]
+        public string BadgeName { get; set; }
+
+        [FirestoreProperty]
+        public string BadgeImgURL { get; set; }
+
 
         public BadgeData()
         {

@@ -47,6 +47,4 @@ MonoBehaviour:
   _leaderboardItemPrefab: {fileID: 4030065338182616401, guid: b90bfe90dc8841c4fa61746389f2905a, type: 3}
   _leaderboardItemParent: {fileID: 0}
   _leaderboardId: MDA3_Leaderboard
-  _username: felipegarcia10_@hotmail.com
-  _password: felipe123$
-  _scoreToPush: 200
+  _scoreToPush: 0
