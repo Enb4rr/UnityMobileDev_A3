@@ -609,9 +609,21 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 4615035887108599988, guid: e55b14b2cf2ca6e42b8de7df60bccef9, type: 3}
-      propertyPath: m_fontSize
-      value: 65.05
+    - target: {fileID: 6355793726701199471, guid: e55b14b2cf2ca6e42b8de7df60bccef9, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6355793726701199471, guid: e55b14b2cf2ca6e42b8de7df60bccef9, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6355793726701199471, guid: e55b14b2cf2ca6e42b8de7df60bccef9, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6355793726701199471, guid: e55b14b2cf2ca6e42b8de7df60bccef9, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6965137381051966903, guid: e55b14b2cf2ca6e42b8de7df60bccef9, type: 3}
       propertyPath: m_AnchorMax.y
@@ -632,10 +644,6 @@ PrefabInstance:
     - target: {fileID: 7035957245486002786, guid: e55b14b2cf2ca6e42b8de7df60bccef9, type: 3}
       propertyPath: m_Name
       value: RegisterPanel
-      objectReference: {fileID: 0}
-    - target: {fileID: 7035957245486002786, guid: e55b14b2cf2ca6e42b8de7df60bccef9, type: 3}
-      propertyPath: m_IsActive
-      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7074513992789913539, guid: e55b14b2cf2ca6e42b8de7df60bccef9, type: 3}
       propertyPath: m_AnchorMax.y
