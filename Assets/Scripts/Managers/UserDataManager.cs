@@ -118,8 +118,11 @@ namespace Managers
                         GameObject newBadget = Instantiate(badgePrefab, badgesParent.transform);
                         newBadget.TryGetComponent(out Badge badge);
                         badge.UpdateBadgeInfo(t.BadgeName);
-                        badges.Add(newBadget);
+                        /////////////////////////////////////////////////////////////////
+                        badge.BadgeImage.sprite = await DownloadSprite(t.BadgeImgURL);
                         
+                        badges.Add(newBadget);
+
                         // TODO: Change with the URL
                         //badges[i].BadgeImage.sprite = await DownloadSprite(badgesFromFirestore[i].BadgeName);
                     }
