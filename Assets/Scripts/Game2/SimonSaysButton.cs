@@ -19,8 +19,7 @@ public class SimonSaysButton : MonoBehaviour
     {
         _button = GetComponent<Button>();
 
-        if (_buttonImage == null)
-            _buttonImage = GetComponent<Image>();
+        if (_buttonImage == null) _buttonImage = GetComponent<Image>();
 
         _button.onClick.AddListener(OnButtonClicked);
 

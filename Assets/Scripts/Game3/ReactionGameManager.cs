@@ -1,60 +1,63 @@
 using TMPro;
 using UnityEngine;
 
-public class CatchGameManager : MonoBehaviour
+public class ReactionGameManager : MonoBehaviour
 {
-    #region  variables
-    public static CatchGameManager Instance { get; private set; }
+    public static ReactionGameManager Instance { get; private set; }
 
+    #region Variables
     [Header("Game Settings")]
-    [SerializeField] private int _startingLives = 3;
+    [SerializeField] private int _initialLives = 3;
 
     [Header("UI")]
     [SerializeField] private TextMeshProUGUI _scoreText;
-    [SerializeField] private TextMeshProUGUI _finalScoreText;
     [SerializeField] private TextMeshProUGUI _livesText;
+    [SerializeField] private TextMeshProUGUI _finalScoreText;
     [SerializeField] private GameObject _losePanel;
 
     private int _score;
     private int _lives;
     private bool _gameEnded;
 
-    public bool GameEnded => _gameEnded;
     #endregion
+
+    public bool GameEnded => _gameEnded;
 
     private void Awake()
     {
         Instance = this;
     }
 
-    private void Start()
+    public void Start()
     {
-        // Initialize game with starting values
+        // Initialize game state
         _score = 0;
-        _lives = _startingLives;
+        _lives = _initialLives;
         _gameEnded = false;
 
-        if (_losePanel != null) _losePanel.SetActive(false); // Deactivate Lose panel
+        _losePanel.SetActive(false);
 
-        UpdateUI(); // Update UI
+        UpdateUI();
     }
 
     public void AddScore(int amount)
     {
         if (_gameEnded) return;
 
-        _score += amount; // increase score
-        UpdateUI(); // Update UI
+        // Update score
+        _score += amount;
+        UpdateUI();
     }
 
-    public void LoseLife()
+    public void ReduceLives()
     {
         if (_gameEnded) return;
 
-        _lives--; // decrease lives
-        UpdateUI(); // update UI
+        // Decrease lives
+        _lives--;
+        UpdateUI();
 
-        if (_lives <= 0) EndGame();
+        if (_lives <= 0) EndGame(); // End game 
     }
 
     private void EndGame()
@@ -67,7 +70,7 @@ public class CatchGameManager : MonoBehaviour
 
     private void UpdateUI()
     {
-        _scoreText.text = $"Score: {_score}"; // Update score text
-        _livesText.text = $"Lives: {_lives}"; // Update lives text
+        if (_scoreText != null) _scoreText.text = $"Score: {_score}"; // Update score text
+        if (_livesText != null) _livesText.text = $"Lives: {_lives}"; // Update lives text
     }
 }
