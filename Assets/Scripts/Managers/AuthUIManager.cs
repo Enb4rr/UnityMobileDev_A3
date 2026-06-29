@@ -41,6 +41,16 @@ public class AuthUIManager : MonoBehaviour
         Instance = this;
     }
 
+    private void OnEnable()
+    {
+        AuthManager.Instance.AuthStateChanged += RefreshUI;
+    }
+
+    private void OnDisable()
+    {
+        AuthManager.Instance.AuthStateChanged -= RefreshUI;
+    }
+
     private void OnDestroy()
     {
         if (Instance == this)

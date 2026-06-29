@@ -21,6 +21,8 @@ public class LeaderboardManager : MonoBehaviour
     private bool _eventsInitialized;
     private bool _servicesInitialized;
 
+    private Task _unityServicesInitTask;
+
     public event Action<List<LeaderboardEntryData>> LeaderboardUpdated;
 
     [Serializable]
@@ -62,10 +64,18 @@ public class LeaderboardManager : MonoBehaviour
         await StartUnityServicesAsync();
     }
 
-    public async Task StartUnityServicesAsync()
+    public Task StartUnityServicesAsync()
     {
-        if (_servicesInitialized) return;
+        if (_servicesInitialized)
+            return Task.CompletedTask;
 
+        _unityServicesInitTask ??= InitializeUnityServicesInternalAsync();
+
+        return _unityServicesInitTask;
+    }
+
+    private async Task InitializeUnityServicesInternalAsync()
+    {
         try
         {
             if (UnityServices.State != ServicesInitializationState.Initialized)
@@ -83,7 +93,9 @@ public class LeaderboardManager : MonoBehaviour
         }
         catch (Exception e)
         {
+            _unityServicesInitTask = null;
             Debug.LogError($"Failed to initialize Unity Services: {e.Message}");
+            throw;
         }
     }
 
@@ -175,6 +187,12 @@ public class LeaderboardManager : MonoBehaviour
     {
         await StartUnityServicesAsync();
 
+        if (!AuthenticationService.Instance.IsSignedIn)
+        {
+            Debug.LogWarning("Cannot get leaderboard because Unity Authentication is not signed in.");
+            return;
+        }
+
         try
         {
             var scoresResponse = await LeaderboardsService.Instance.GetScoresAsync(
@@ -201,8 +219,6 @@ public class LeaderboardManager : MonoBehaviour
             }
 
             Debug.Log($"Retrieved {entries.Count} leaderboard entries.");
-            Debug.Log(LeaderboardUpdated);
-
             LeaderboardUpdated?.Invoke(entries);
         }
         catch (Exception e)

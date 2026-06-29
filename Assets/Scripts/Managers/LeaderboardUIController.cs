@@ -36,7 +36,14 @@ public class LeaderboardUIController : MonoBehaviour
 
         Debug.Log("LeaderboardUIController subscribed to LeaderboardUpdated.");
 
-        _ = LeaderboardManager.Instance.GetLeaderboardAsync();
+        if (Unity.Services.Authentication.AuthenticationService.Instance.IsSignedIn)
+        {
+            _ = LeaderboardManager.Instance.GetLeaderboardAsync();
+        }
+        else
+        {
+            Debug.Log("Leaderboard UI subscribed, waiting for Unity Authentication sign in.");
+        }
     }
 
     private void Unsubscribe()

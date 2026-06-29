@@ -27,17 +27,17 @@ namespace Managers
 
         private bool _isInitialized;
 
-        private async void Start()
-        {
-            try
-            {
-                await EnsureInitializedAsync();
-            }
-            catch (Exception e)
-            {
-                Debug.LogError($"UserDataManager initialization error: {e.Message}");
-            }
-        }
+        // private async void Start()
+        // {
+        //     try
+        //     {
+        //         await EnsureInitializedAsync();
+        //     }
+        //     catch (Exception e)
+        //     {
+        //         Debug.LogError($"UserDataManager initialization error: {e.Message}");
+        //     }
+        // }
 
         public async Task EnsureInitializedAsync()
         {
@@ -122,12 +122,6 @@ namespace Managers
                     BadgesChanged?.Invoke(CurrentBadges);
                 }
             });
-        }
-
-        // Por compatibilidad con tu AuthManager actual.
-        public async void InitializeListeners(string email)
-        {
-            await InitializeListenersAsync(email);
         }
 
         public void StopListeners()

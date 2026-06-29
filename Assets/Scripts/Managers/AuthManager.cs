@@ -178,7 +178,7 @@ namespace Managers
                 );
             }
 
-            UserDataManager.Instance.InitializeListeners(email);
+            await UserDataManager.Instance.InitializeListenersAsync(email);
         }
 
         private string GetUsernameFromEmail(string email)
