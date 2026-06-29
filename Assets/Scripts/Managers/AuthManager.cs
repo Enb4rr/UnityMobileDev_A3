@@ -1,13 +1,16 @@
-using System;
-using System.Collections;
-using System.Threading.Tasks;
 using Firebase;
 using Firebase.Auth;
+using Google;
+using System;
+using System.Collections;
+using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using TMPro;
+using UI;
 using UnityEngine;
 using UnityEngine.UI;
-using Google;
-using UI;
+using UnityEngine.Windows;
 
 namespace Managers
 {
@@ -175,7 +178,7 @@ namespace Managers
                 AuthResult result = await Auth.SignInWithEmailAndPasswordAsync(email, password);
                 UserDataManager.Instance.InitializeListeners(Auth.CurrentUser.Email);
                 LoadMenuPanel();
-                await LeaderboardManager.Instance.SignUpWithUsernamePasswordAsync(email, password);
+                await LeaderboardManager.Instance.SignInWithUsernamePasswordAsync(email, password);
             }
             catch (Exception e)
             {
@@ -234,12 +237,12 @@ namespace Managers
                 return false;
             }
 
-            if (isRegistering && password.Length < 6)
+            if (isRegistering && password.Length < 8)
             {
-                ShowError("Password is too short");
+                ShowError("Password is too short, has to be at least 8 characters long");
                 return false;
             }
-
+            
             if (checkUsername && string.IsNullOrEmpty(username))
             {
                 ShowError("Username is required");

@@ -54,8 +54,6 @@ public class LeaderboardManager : MonoBehaviour
         {
             if (UnityServices.State != ServicesInitializationState.Initialized)
             {
-                //var options = new InitializationOptions();
-                //options.SetProfile("default_profile");
                 await UnityServices.InitializeAsync();
             }
             if (UnityServices.State == ServicesInitializationState.Initialized)
@@ -77,7 +75,7 @@ public class LeaderboardManager : MonoBehaviour
 
     }
 
-    async Task SignInWithUsernamePasswordAsync(string username, string password)
+    public async Task SignInWithUsernamePasswordAsync(string username, string password)
     {
         try
         {
@@ -109,18 +107,8 @@ public class LeaderboardManager : MonoBehaviour
         }
         catch (AuthenticationException ex)
         {
-            // Compare error code to AuthenticationErrorCodes
-            // Notify the player with the proper error message
-            // Check if the error indicates the user already exists
-            if (ex.ErrorCode == AuthenticationErrorCodes.AccountAlreadyLinked)
-            {
-                Debug.LogError("Sign up failed: This username is already taken.");
-                await SignInWithUsernamePasswordAsync(username, password);
-            }
-            else
-            {
+
                 Debug.LogError($"Sign up failed: {ex.Message}");
-            }
         }
         catch (RequestFailedException ex)
         {

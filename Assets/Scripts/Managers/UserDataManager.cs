@@ -130,7 +130,7 @@ namespace Managers
             });
         }
 
-        private async Task<Sprite> DownloadSprite(string url)
+        public async Task<Sprite> DownloadSprite(string url)
         {
             using UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
 
