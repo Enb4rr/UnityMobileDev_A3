@@ -1,9 +1,8 @@
 using Managers;
-using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
-using TMPro;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using Unity.Services.Leaderboards;
@@ -13,15 +12,16 @@ public class LeaderboardManager : MonoBehaviour
 {
     public static LeaderboardManager Instance { get; private set; }
 
-    [SerializeField] private GameObject _leaderboardItemPrefab;
-    [SerializeField] private GameObject _leaderboardItemParent;
+    [Header("Leaderboard Settings")]
     [SerializeField] private string _leaderboardId;
-    private bool _eventsInitialized = false;
 
-    //Credentials for testing
-
-    //Score to push
+    [Header("Testing")]
     [SerializeField] private float _scoreToPush;
+
+    private bool _eventsInitialized;
+    private bool _servicesInitialized;
+
+    public event Action<List<LeaderboardEntryData>> LeaderboardUpdated;
 
     [Serializable]
     public class ScoreMetadata
@@ -29,26 +29,42 @@ public class LeaderboardManager : MonoBehaviour
         public string playerName;
     }
 
+    public class LeaderboardEntryData
+    {
+        public int Rank;
+        public string PlayerName;
+        public double Score;
+        public bool IsPlayerRecord;
+
+        public LeaderboardEntryData(int rank, string playerName, double score, bool isPlayerRecord)
+        {
+            Rank = rank;
+            PlayerName = playerName;
+            Score = score;
+            IsPlayerRecord = isPlayerRecord;
+        }
+    }
+
     private void Awake()
     {
-        if (Instance == null)
-        {
-            Instance = this;
-            DontDestroyOnLoad(gameObject);
-        }
-        else if (Instance != this)
+        if (Instance != null && Instance != this)
         {
             Destroy(gameObject);
+            return;
         }
+
+        Instance = this;
+        DontDestroyOnLoad(gameObject);
     }
 
-    private void Start()
+    private async void Start()
     {
-        StartUnityServices();
+        await StartUnityServicesAsync();
     }
 
-    public async void StartUnityServices()
+    public async Task StartUnityServicesAsync()
     {
+        if (_servicesInitialized) return;
 
         try
         {
@@ -56,138 +72,198 @@ public class LeaderboardManager : MonoBehaviour
             {
                 await UnityServices.InitializeAsync();
             }
-            if (UnityServices.State == ServicesInitializationState.Initialized)
-            {
-                Debug.Log("CLOUD SERVICES INITIALIZED");
-            }
+
+            _servicesInitialized = true;
+            Debug.Log("Cloud Services Initialized");
 
             if (!_eventsInitialized)
             {
                 SetupEvents();
             }
-
         }
         catch (Exception e)
         {
-
+            Debug.LogError($"Failed to initialize Unity Services: {e.Message}");
         }
-
-
     }
 
     public async Task SignInWithUsernamePasswordAsync(string username, string password)
     {
+        await StartUnityServicesAsync();
+
         try
         {
-            await AuthenticationService.Instance.SignInWithUsernamePasswordAsync(username, password);
-            Debug.Log("SignIn is successful.");
-            await AddScore(username);
+            if (!AuthenticationService.Instance.IsSignedIn)
+            {
+                await AuthenticationService.Instance.SignInWithUsernamePasswordAsync(username, password);
+            }
 
+            Debug.Log("Unity Authentication sign in successful.");
+
+            await AddScoreAsync(username, _scoreToPush);
         }
         catch (AuthenticationException ex)
         {
-            // Compare error code to AuthenticationErrorCodes
-            // Notify the player with the proper error message
             Debug.LogException(ex);
         }
         catch (RequestFailedException ex)
         {
-            // Compare error code to CommonErrorCodes
-            // Notify the player with the proper error message
             Debug.LogException(ex);
         }
     }
+
     public async Task SignUpWithUsernamePasswordAsync(string username, string password)
     {
+        await StartUnityServicesAsync();
+
         try
         {
-            await AuthenticationService.Instance.SignUpWithUsernamePasswordAsync(username, password);
-            Debug.Log("SignUp is successful.");
-            await AddScore(username);
+            if (!AuthenticationService.Instance.IsSignedIn)
+            {
+                await AuthenticationService.Instance.SignUpWithUsernamePasswordAsync(username, password);
+            }
+
+            Debug.Log("Unity Authentication sign up successful.");
+
+            await AddScoreAsync(username, _scoreToPush);
         }
         catch (AuthenticationException ex)
         {
-
-                Debug.LogError($"Sign up failed: {ex.Message}");
+            Debug.LogError($"Sign up failed: {ex.Message}");
         }
         catch (RequestFailedException ex)
         {
-            // Compare error code to CommonErrorCodes
-            // Notify the player with the proper error message
             Debug.LogException(ex);
         }
     }
 
-    public async Awaitable AddScore(string username)
+    public async Task AddScoreAsync(string username, double score)
     {
+        await StartUnityServicesAsync();
+
         try
         {
-            var scoreMetadata = new ScoreMetadata { playerName = username };
-            var playerEntry = await LeaderboardsService.Instance
-                .AddPlayerScoreAsync(
-                _leaderboardId, 
-                _scoreToPush,
-                new AddPlayerScoreOptions { Metadata = scoreMetadata }
-                );
+            if (!AuthenticationService.Instance.IsSignedIn)
+            {
+                Debug.LogWarning("Cannot add score because Unity Authentication is not signed in.");
+                return;
+            }
 
-            await GetLeaderboard();
+            ScoreMetadata scoreMetadata = new ScoreMetadata
+            {
+                playerName = username
+            };
+
+            await LeaderboardsService.Instance.AddPlayerScoreAsync(
+                _leaderboardId,
+                score,
+                new AddPlayerScoreOptions
+                {
+                    Metadata = scoreMetadata
+                }
+            );
+
+            await GetLeaderboardAsync();
         }
         catch (Exception e)
         {
-            Debug.Log("Failed to add score: "+e);
+            Debug.LogError($"Failed to add score: {e.Message}");
         }
-
     }
 
-    public async Awaitable GetLeaderboard()
+    public async Task GetLeaderboardAsync()
     {
+        await StartUnityServicesAsync();
+
         try
         {
             var scoresResponse = await LeaderboardsService.Instance.GetScoresAsync(
                 _leaderboardId,
-                new GetScoresOptions { IncludeMetadata = true});
-            var scoresResponseResultsJSON = JsonConvert.SerializeObject(scoresResponse);
-            Debug.Log("LEADERBOARD");
-            Debug.Log(scoresResponseResultsJSON);
+                new GetScoresOptions
+                {
+                    IncludeMetadata = true
+                }
+            );
+
+            List<LeaderboardEntryData> entries = new List<LeaderboardEntryData>();
 
             foreach (var item in scoresResponse.Results)
             {
-                PopulateLeaderboard(item.Rank, JObject.Parse(item.Metadata)["playerName"].ToString(), item.Score, AuthenticationService.Instance.PlayerId == item.PlayerId);
+                string playerName = GetPlayerNameFromMetadata(item.Metadata);
+                bool isPlayerRecord = AuthenticationService.Instance.PlayerId == item.PlayerId;
+
+                entries.Add(new LeaderboardEntryData(
+                    item.Rank,
+                    playerName,
+                    item.Score,
+                    isPlayerRecord
+                ));
             }
 
-            await GetPlayerScore();
+            Debug.Log($"Retrieved {entries.Count} leaderboard entries.");
+            Debug.Log(LeaderboardUpdated);
 
+            LeaderboardUpdated?.Invoke(entries);
         }
         catch (Exception e)
         {
-            Debug.Log("Failed to retrieve leaderboard: "+e);
-
+            Debug.LogError($"Failed to retrieve leaderboard: {e.Message}");
         }
     }
 
-    private void PopulateLeaderboard(int rank, string playerName, double score, bool isPlayerRecord)
+    private string GetPlayerNameFromMetadata(string metadata)
     {
-        GameObject leaderboardItem = Instantiate(_leaderboardItemPrefab, _leaderboardItemParent.transform);
+        if (string.IsNullOrEmpty(metadata))
+            return "Unknown";
 
-        leaderboardItem.GetComponentsInChildren<TMP_Text>()[0].SetText((rank + 1).ToString());
-        if(isPlayerRecord) leaderboardItem.GetComponentsInChildren<TMP_Text>()[0].color = Color.green;
-        leaderboardItem.GetComponentsInChildren<TMP_Text>()[1].SetText(playerName);
-        leaderboardItem.GetComponentsInChildren<TMP_Text>()[2].SetText(score.ToString());
+        try
+        {
+            JObject metadataObject = JObject.Parse(metadata);
 
+            if (metadataObject["playerName"] != null)
+                return metadataObject["playerName"].ToString();
+        }
+        catch
+        {
+            Debug.LogWarning("Could not parse leaderboard metadata.");
+        }
+
+        return "Unknown";
     }
 
-    public async Awaitable GetPlayerScore()
+    public async Task GetPlayerScoreAsync()
     {
-        var playerScore = await LeaderboardsService.Instance.GetPlayerScoreAsync(_leaderboardId);
+        await StartUnityServicesAsync();
+
+        try
+        {
+            if (!AuthenticationService.Instance.IsSignedIn)
+            {
+                Debug.LogWarning("Cannot get player score because Unity Authentication is not signed in.");
+                return;
+            }
+
+            var playerScore = await LeaderboardsService.Instance.GetPlayerScoreAsync(_leaderboardId);
+            Debug.Log($"Player Score: {playerScore.Score}");
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"Failed to get player score: {e.Message}");
+        }
     }
 
     public async void TriggerAddScore()
     {
-        await AddScore(AuthManager.Instance.Auth.CurrentUser.Email);
+        string email = AuthManager.Instance != null
+            ? AuthManager.Instance.CurrentUserEmail
+            : "Unknown";
+
+        await AddScoreAsync(email, _scoreToPush);
     }
+
     public async void TriggerGetLeaderboard()
     {
-        await GetLeaderboard();
+        await GetLeaderboardAsync();
     }
 
     private void SetupEvents()
@@ -196,15 +272,17 @@ public class LeaderboardManager : MonoBehaviour
 
         AuthenticationService.Instance.SignedIn += () =>
         {
-
+            Debug.Log("Unity Authentication Signed In");
         };
+
         AuthenticationService.Instance.SignedOut += () =>
         {
-
+            Debug.Log("Unity Authentication Signed Out");
         };
+
         AuthenticationService.Instance.Expired += () =>
         {
-
+            Debug.Log("Unity Authentication Session Expired");
         };
     }
 }

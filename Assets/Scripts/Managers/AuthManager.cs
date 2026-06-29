@@ -2,272 +2,195 @@ using Firebase;
 using Firebase.Auth;
 using Google;
 using System;
-using System.Collections;
-using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading.Tasks;
-using TMPro;
-using UI;
 using UnityEngine;
-using UnityEngine.UI;
-using UnityEngine.Windows;
 
 namespace Managers
 {
     public class AuthManager : BasePersistentManager<AuthManager>
     {
-        [Header("UI Login References")] 
-        [SerializeField] private TMP_InputField emailLoginInputField;
-        [SerializeField] private TMP_InputField passwordLoginInputField;
-        [SerializeField] private Button loginButton;
-
-        [Header("UI Register References")]
-        [SerializeField] private TMP_InputField emailRegisterInputField;
-        [SerializeField] private TMP_InputField passwordRegisterInputField;
-        [SerializeField] private Button registerButton;
-        
-        [Header("Panels")]
-        [SerializeField] private GameObject introPanel;
-        [SerializeField] private GameObject userPanel;
-        [SerializeField] private GameObject menuPanel;
-
-        [Header("UI Change Password")] 
-        [SerializeField] private AlertPanel alertPanel;
-
         public FirebaseAuth Auth { get; private set; }
-        private GoogleSignInConfiguration googleConfig;
+
+        private GoogleSignInConfiguration _googleConfig;
+
+        public bool IsInitialized { get; private set; }
+        public bool IsLoggedIn => Auth != null && Auth.CurrentUser != null;
+        public string CurrentUserEmail => Auth?.CurrentUser?.Email;
+
+        public event Action AuthStateChanged;
 
         private async void Start()
         {
             try
             {
-                await InitializeFirebaseAsync();
-                InitializeGoogleSignIn();
+                await EnsureInitializedAsync();
 
-                if (CheckCurrentUser())
+                if (IsLoggedIn)
                 {
-                    if (!await UserDataManager.Instance.IsUserInFirestore(Auth.CurrentUser.Email))
-                    {
-                        await UserDataManager.Instance.CreatePlayerProfileAsync(Auth.CurrentUser.Email, GetUsernameFromEmail(Auth.CurrentUser.Email));
-                    }
-                    UserDataManager.Instance.InitializeListeners(Auth.CurrentUser.Email);
-                    LoadMenuPanel();
+                    await InitializeCurrentUserSessionAsync();
                 }
-                else
-                {
-                    LoadLoginPanel();
-                }
+
+                NotifyAuthStateChanged();
             }
             catch (Exception e)
             {
-                Debug.Log(e.Message);
+                Debug.LogError($"Auth initialization error: {e.Message}");
             }
         }
 
-        #region Auth Services Initialization
+        #region Initialization
 
-        // Firebase Auth Initialization
+        private async Task EnsureInitializedAsync()
+        {
+            if (IsInitialized) return;
+
+            await InitializeFirebaseAsync();
+            InitializeGoogleSignIn();
+
+            IsInitialized = true;
+        }
+
         private async Task InitializeFirebaseAsync()
         {
             DependencyStatus dependenciesStatus = await FirebaseApp.CheckAndFixDependenciesAsync();
 
-            if (dependenciesStatus == DependencyStatus.Available) Auth = FirebaseAuth.DefaultInstance;
-            else Debug.LogError($"Could not resolve all Firebase dependencies: {dependenciesStatus}");
+            if (dependenciesStatus == DependencyStatus.Available)
+            {
+                Auth = FirebaseAuth.DefaultInstance;
+            }
+            else
+            {
+                throw new Exception($"Could not resolve all Firebase dependencies: {dependenciesStatus}");
+            }
         }
 
-        // Google Sign In Services Initialization
         private void InitializeGoogleSignIn()
         {
-            googleConfig = new GoogleSignInConfiguration()
+            _googleConfig = new GoogleSignInConfiguration()
             {
                 WebClientId = "1018292918451-t9uvltu2dsnspclpmml7h58cfaes1csn.apps.googleusercontent.com",
                 RequestIdToken = true,
                 RequestEmail = true,
             };
 
-            GoogleSignIn.Configuration = googleConfig;
+            GoogleSignIn.Configuration = _googleConfig;
         }
 
         #endregion
-        
-        #region Button Functions
-        
-        public async void LoginButton()
+
+        #region Auth Methods
+
+        public async Task LoginEmailPasswordAsync(string email, string password)
         {
-            if (!ValidateInputFields(emailLoginInputField.text, passwordLoginInputField.text)) return;
-            
-            try
-            {
-                await LoginEmailPasswordAsync(emailLoginInputField.text, passwordLoginInputField.text);
-                
-                if (!await UserDataManager.Instance.IsUserInFirestore(Auth.CurrentUser.Email))
-                {
-                    await UserDataManager.Instance.CreatePlayerProfileAsync(Auth.CurrentUser.Email, GetUsernameFromEmail(Auth.CurrentUser.Email));
-                }
-            }
-            catch (Exception e)
-            {
-                ShowError(e.Message);
-            }
+            await EnsureInitializedAsync();
+
+            await Auth.SignInWithEmailAndPasswordAsync(email, password);
+
+            await InitializeCurrentUserSessionAsync();
+
+            await LeaderboardManager.Instance.SignInWithUsernamePasswordAsync(email, password);
+
+            NotifyAuthStateChanged();
         }
 
-        public async void RegisterButton()
+        public async Task RegisterEmailPasswordAsync(string email, string password, string username = "")
         {
-            if (!ValidateInputFields(emailRegisterInputField.text, passwordRegisterInputField.text, true)) return;
-            
-            try
-            {
-                await RegisterEmailPasswordAsync(emailRegisterInputField.text, passwordRegisterInputField.text);
-                await UserDataManager.Instance.CreatePlayerProfileAsync(Auth.CurrentUser.Email, GetUsernameFromEmail(Auth.CurrentUser.Email));
-            }
-            catch (Exception e)
-            {
-                ShowError(e.Message);
-            }
+            await EnsureInitializedAsync();
+
+            await Auth.CreateUserWithEmailAndPasswordAsync(email, password);
+
+            await InitializeCurrentUserSessionAsync();
+
+            await LeaderboardManager.Instance.SignUpWithUsernamePasswordAsync(email, password);
+
+            NotifyAuthStateChanged();
         }
-        
-        public async Task GoogleLoginButton()
+
+        public async Task LoginWithGoogleAsync()
         {
 #if UNITY_EDITOR
-            Debug.LogError("Google Login Button Not Supported");
+            Debug.LogError("Google Login Button Not Supported in Unity Editor");
             return;
-#endif
+#else
+            await EnsureInitializedAsync();
 
-            await LoginWithGoogleAsync();
-        }
-
-        public void UpdatePasswordButton()
-        {
-            alertPanel.ShowAlert("Change Password", "Type your new password", async () =>
-            {
-                FirebaseUser user = Auth.CurrentUser;
-            
-                if (user == null) return;
-            
-                await user.UpdatePasswordAsync(alertPanel.InputField.text).ContinueWith(task =>
-                {
-                    if (task.IsCanceled)
-                    {
-                        Debug.LogError("Google Login Button Cancelled");
-                        return;
-                    }
-                    if (task.IsFaulted)
-                    {
-                        Debug.LogError($"Error changing the password, {task.Exception}");
-                        return;
-                    }
-                
-                    Debug.Log("Password changed successfully!");
-                });
-            });
-        }
-        
-        #endregion
-
-        private async Task LoginWithGoogleAsync()
-        {
             GoogleSignInUser googleUser = await GoogleSignIn.DefaultInstance.SignIn();
+
             Credential credential = GoogleAuthProvider.GetCredential(googleUser.IdToken, null);
-            FirebaseUser firebaseUser = await Auth.SignInWithCredentialAsync(credential);
+
+            await Auth.SignInWithCredentialAsync(credential);
+
+            await InitializeCurrentUserSessionAsync();
+
+            NotifyAuthStateChanged();
+#endif
         }
 
-        private async Task LoginEmailPasswordAsync(string email, string password)
+        public async Task UpdatePasswordAsync(string newPassword)
         {
-            try
-            {
-                AuthResult result = await Auth.SignInWithEmailAndPasswordAsync(email, password);
-                UserDataManager.Instance.InitializeListeners(Auth.CurrentUser.Email);
-                LoadMenuPanel();
-                await LeaderboardManager.Instance.SignInWithUsernamePasswordAsync(email, password);
-            }
-            catch (Exception e)
-            {
-                ShowError(e.Message);
-            }
-        }
+            await EnsureInitializedAsync();
 
-        private async Task RegisterEmailPasswordAsync(string email, string password, string username = "")
-        {
-            try
+            FirebaseUser user = Auth.CurrentUser;
+
+            if (user == null)
             {
-                AuthResult result = await Auth.CreateUserWithEmailAndPasswordAsync(email, password);
-                UserDataManager.Instance.InitializeListeners(Auth.CurrentUser.Email);
-                LoadMenuPanel();
-                await LeaderboardManager.Instance.SignUpWithUsernamePasswordAsync(email, password);
+                throw new Exception("No user is currently logged in.");
             }
-            catch (Exception e)
+
+            if (string.IsNullOrEmpty(newPassword))
             {
-                ShowError(e.Message);
+                throw new Exception("Password is required.");
             }
+
+            await user.UpdatePasswordAsync(newPassword);
         }
 
         public void Logout()
         {
-            Auth.SignOut();
-            LoadLoginPanel();
-        }
-
-        private bool CheckCurrentUser()
-        {
-            return Auth.CurrentUser != null;
-        }
-
-        private void ShowError(string error)
-        {
-            Debug.LogError(error);
-        }
-
-        private void ExecuteLoginLoading(bool active)
-        {
-            loginButton.interactable = active;
-            registerButton.interactable = active;
-        }
-
-        private bool ValidateInputFields(string email, string password, bool isRegistering = false, bool checkUsername = false, string username = "")
-        {
-            if (string.IsNullOrEmpty(email))
+            if (Auth != null)
             {
-                ShowError("Email is required");
-                return false;
+                Auth.SignOut();
             }
 
-            if (string.IsNullOrEmpty(password))
+            NotifyAuthStateChanged();
+            AuthUIManager.Instance.RefreshUI();
+        }
+
+        #endregion
+
+        #region User Session
+
+        private async Task InitializeCurrentUserSessionAsync()
+        {
+            FirebaseUser user = Auth.CurrentUser;
+
+            if (user == null) return;
+
+            string email = user.Email;
+
+            if (string.IsNullOrEmpty(email)) return;
+
+            if (!await UserDataManager.Instance.IsUserInFirestore(email))
             {
-                ShowError("Password is required");
-                return false;
+                await UserDataManager.Instance.CreatePlayerProfileAsync(
+                    email,
+                    GetUsernameFromEmail(email)
+                );
             }
 
-            if (isRegistering && password.Length < 8)
-            {
-                ShowError("Password is too short, has to be at least 8 characters long");
-                return false;
-            }
-            
-            if (checkUsername && string.IsNullOrEmpty(username))
-            {
-                ShowError("Username is required");
-                return false;
-            }
-
-            return true;
+            UserDataManager.Instance.InitializeListeners(email);
         }
 
         private string GetUsernameFromEmail(string email)
         {
-            return email.Contains("@") ? email.Split('@')[0] : null;
+            return email.Contains("@") ? email.Split('@')[0] : email;
         }
 
-        private void LoadLoginPanel()
+        private void NotifyAuthStateChanged()
         {
-            introPanel?.SetActive(true);
-            menuPanel?.SetActive(false);
-            userPanel?.SetActive(false);
+            AuthStateChanged?.Invoke();
         }
 
-        private void LoadMenuPanel()
-        {
-            introPanel?.SetActive(false);
-            menuPanel?.SetActive(true);
-        }
+        #endregion
     }
 }
