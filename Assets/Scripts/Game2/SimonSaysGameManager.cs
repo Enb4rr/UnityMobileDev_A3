@@ -21,6 +21,9 @@ public class SimonSaysGameManager : MonoBehaviour
     [SerializeField] private GameObject _losePanel;
     [SerializeField] private GameObject _buttonsPanel;
 
+    [Header("Player")]
+    [SerializeField] private PlayerCredentials _playerCredentials;
+
     private List<int> _sequence = new List<int>();
     
     private int _score;
@@ -142,7 +145,7 @@ public class SimonSaysGameManager : MonoBehaviour
         StartCoroutine(StartNextRound()); // Start the next round
     }
 
-    private void EndGame()
+    private async void EndGame()
     {
         // Set game state to ended
         _gameEnded = true;
@@ -155,6 +158,9 @@ public class SimonSaysGameManager : MonoBehaviour
         if (_losePanel != null) _losePanel.SetActive(true);
 
         if (_buttonsPanel != null) _buttonsPanel.SetActive(false);
+
+        await LeaderboardManager.Instance.AddScoreAsync(_playerCredentials.email, _score); // Submit score to leaderboard
+
     }
 
     private void SetButtonsInteractable(bool value)

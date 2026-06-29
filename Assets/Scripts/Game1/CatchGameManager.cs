@@ -15,6 +15,9 @@ public class CatchGameManager : MonoBehaviour
     [SerializeField] private TextMeshProUGUI _livesText;
     [SerializeField] private GameObject _losePanel;
 
+    [Header("Player")]
+    [SerializeField] private PlayerCredentials _playerCredentials;
+
     private int _score;
     private int _lives;
     private bool _gameEnded;
@@ -57,12 +60,13 @@ public class CatchGameManager : MonoBehaviour
         if (_lives <= 0) EndGame();
     }
 
-    private void EndGame()
+    private async void EndGame()
     {
         _gameEnded = true;
     
         if (_finalScoreText != null) _finalScoreText.text = $"Final Score: {_score}"; // Update final score text
         if (_losePanel != null) _losePanel.SetActive(true); // Activate Lose panel
+        await LeaderboardManager.Instance.AddScoreAsync(_playerCredentials.email, _score); // Submit score to leaderboard
     }
 
     private void UpdateUI()

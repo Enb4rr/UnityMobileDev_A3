@@ -9,6 +9,7 @@ namespace Managers
 {
     public class AuthManager : BasePersistentManager<AuthManager>
     {
+        [SerializeField] private PlayerCredentials _playerCredentialsSO;
         public FirebaseAuth Auth { get; private set; }
 
         private GoogleSignInConfiguration _googleConfig;
@@ -88,7 +89,11 @@ namespace Managers
 
             await InitializeCurrentUserSessionAsync();
 
-            await LeaderboardManager.Instance.SignInWithUsernamePasswordAsync(email, password);
+            _playerCredentialsSO.email = email;
+            _playerCredentialsSO.password = password;
+
+            await LeaderboardManager.Instance.SignInWithUsernamePasswordAsync(_playerCredentialsSO.email, _playerCredentialsSO.password);
+
 
             NotifyAuthStateChanged();
         }
@@ -101,7 +106,11 @@ namespace Managers
 
             await InitializeCurrentUserSessionAsync();
 
-            await LeaderboardManager.Instance.SignUpWithUsernamePasswordAsync(email, password);
+            _playerCredentialsSO.email = email;
+            _playerCredentialsSO.password = password;
+
+            await LeaderboardManager.Instance.SignUpWithUsernamePasswordAsync(_playerCredentialsSO.email, _playerCredentialsSO.password);
+
 
             NotifyAuthStateChanged();
         }

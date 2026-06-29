@@ -59,49 +59,43 @@ public class LeaderboardManager : MonoBehaviour
         DontDestroyOnLoad(gameObject);
     }
 
-    private async void Start()
+    private void Start()
     {
-        await StartUnityServicesAsync();
+        StartUnityServices();
     }
 
-    public Task StartUnityServicesAsync()
+    public async void StartUnityServices()
     {
-        if (_servicesInitialized)
-            return Task.CompletedTask;
 
-        _unityServicesInitTask ??= InitializeUnityServicesInternalAsync();
-
-        return _unityServicesInitTask;
-    }
-
-    private async Task InitializeUnityServicesInternalAsync()
-    {
         try
         {
             if (UnityServices.State != ServicesInitializationState.Initialized)
             {
                 await UnityServices.InitializeAsync();
             }
-
-            _servicesInitialized = true;
-            Debug.Log("Cloud Services Initialized");
+            if (UnityServices.State == ServicesInitializationState.Initialized)
+            {
+                Debug.Log("CLOUD SERVICES INITIALIZED");
+            }
 
             if (!_eventsInitialized)
             {
                 SetupEvents();
             }
+
         }
         catch (Exception e)
         {
-            _unityServicesInitTask = null;
             Debug.LogError($"Failed to initialize Unity Services: {e.Message}");
-            throw;
         }
+
+
     }
 
     public async Task SignInWithUsernamePasswordAsync(string username, string password)
     {
-        await StartUnityServicesAsync();
+        //await StartUnityServicesAsync();
+        StartUnityServices();
 
         try
         {
@@ -112,7 +106,8 @@ public class LeaderboardManager : MonoBehaviour
 
             Debug.Log("Unity Authentication sign in successful.");
 
-            await AddScoreAsync(username, _scoreToPush);
+            //await AddScoreAsync(username, _scoreToPush);
+            await GetLeaderboardAsync();
         }
         catch (AuthenticationException ex)
         {
@@ -126,7 +121,8 @@ public class LeaderboardManager : MonoBehaviour
 
     public async Task SignUpWithUsernamePasswordAsync(string username, string password)
     {
-        await StartUnityServicesAsync();
+        //await StartUnityServicesAsync();
+        StartUnityServices();
 
         try
         {
@@ -137,7 +133,8 @@ public class LeaderboardManager : MonoBehaviour
 
             Debug.Log("Unity Authentication sign up successful.");
 
-            await AddScoreAsync(username, _scoreToPush);
+            //await AddScoreAsync(username, _scoreToPush);
+            await GetLeaderboardAsync();
         }
         catch (AuthenticationException ex)
         {
@@ -151,7 +148,8 @@ public class LeaderboardManager : MonoBehaviour
 
     public async Task AddScoreAsync(string username, double score)
     {
-        await StartUnityServicesAsync();
+        //await StartUnityServicesAsync();
+        StartUnityServices();
 
         try
         {
@@ -175,7 +173,7 @@ public class LeaderboardManager : MonoBehaviour
                 }
             );
 
-            await GetLeaderboardAsync();
+            //await GetLeaderboardAsync();
         }
         catch (Exception e)
         {
@@ -185,7 +183,8 @@ public class LeaderboardManager : MonoBehaviour
 
     public async Task GetLeaderboardAsync()
     {
-        await StartUnityServicesAsync();
+        //await StartUnityServicesAsync();
+        StartUnityServices();
 
         if (!AuthenticationService.Instance.IsSignedIn)
         {
@@ -249,7 +248,8 @@ public class LeaderboardManager : MonoBehaviour
 
     public async Task GetPlayerScoreAsync()
     {
-        await StartUnityServicesAsync();
+        //await StartUnityServicesAsync();
+        StartUnityServices();
 
         try
         {
@@ -260,7 +260,6 @@ public class LeaderboardManager : MonoBehaviour
             }
 
             var playerScore = await LeaderboardsService.Instance.GetPlayerScoreAsync(_leaderboardId);
-            Debug.Log($"Player Score: {playerScore.Score}");
         }
         catch (Exception e)
         {
@@ -268,14 +267,14 @@ public class LeaderboardManager : MonoBehaviour
         }
     }
 
-    public async void TriggerAddScore()
-    {
-        string email = AuthManager.Instance != null
-            ? AuthManager.Instance.CurrentUserEmail
-            : "Unknown";
+    //public async void TriggerAddScore()
+    //{
+    //    string email = AuthManager.Instance != null
+    //        ? AuthManager.Instance.CurrentUserEmail
+    //        : "Unknown";
 
-        await AddScoreAsync(email, _scoreToPush);
-    }
+    //    await AddScoreAsync(email, _scoreToPush);
+    //}
 
     public async void TriggerGetLeaderboard()
     {

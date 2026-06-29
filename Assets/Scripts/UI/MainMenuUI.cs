@@ -7,7 +7,8 @@ public class MainMenuUI : MonoBehaviour
 {
     [SerializeField] private GameOFTheDaySO _gameOfTheDay;
     [SerializeField] private WinnerOfTheDay _winnerOfTheDay;
-    [SerializeField] private GameObject _winNotification;
+    [SerializeField] private GameObject _winNotificationCanvas;
+    [SerializeField] private GameObject _winNotificationPanel;
     [SerializeField] private GameObject _header;
     [SerializeField] private GameObject _subheader;
     [SerializeField] private GameObject _badgeImage;
@@ -28,7 +29,8 @@ public class MainMenuUI : MonoBehaviour
 
         _header.GetComponent<TMPro.TextMeshProUGUI>().text = "NEW BADGE EARNED!";
         _subheader.GetComponent<TMPro.TextMeshProUGUI>().text = "Yesterday you had the top score, here is your new badge!";
-        _winNotification.SetActive(true);
+        _winNotificationCanvas.SetActive(true);
+        _winNotificationPanel.SetActive(true);
         _badgeImage.SetActive(true);
         _inputField.SetActive(false);
         _cancelButton.SetActive(false);

@@ -92,7 +92,6 @@ public class UserDataUIController : MonoBehaviour
 
         foreach (BadgeData badgeData in badgesFromFirestore)
         {
-            Debug.Log("here");
             GameObject newBadge = Instantiate(badgePrefab, badgesParent);
             badges.Add(newBadge);
 
