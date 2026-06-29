@@ -1,0 +1,53 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &8178303546842273518
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4977580046929938768}
+  - component: {fileID: 2485482864503748984}
+  m_Layer: 0
+  m_Name: NextDayController
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4977580046929938768
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8178303546842273518}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 163.5, y: 176.30034, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2485482864503748984
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8178303546842273518}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1b21bcabbc75d6e4a922a1619ab61718, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::NextDayController
+  _leaderboardContainer: {fileID: 0}
+  _gameScenes:
+  - {fileID: 102900000, guid: 3706ad7f9655ea74b88f1630e699470d, type: 3}
+  - {fileID: 102900000, guid: 8addc093ffd53514a809bca963d19844, type: 3}
+  - {fileID: 102900000, guid: 59db8d4d36efc224e8b60daff0f89a30, type: 3}
+  _GameOfTheDaySO: {fileID: 11400000, guid: a68ed2ff5b2ab4a4ab8421cce5f5430b, type: 2}
+  _WinnerOfTheDaySO: {fileID: 11400000, guid: d32200adbcb756a449383f5e40edc9fd, type: 2}
