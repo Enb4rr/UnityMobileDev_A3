@@ -118,8 +118,11 @@ namespace Managers
                         GameObject newBadget = Instantiate(badgePrefab, badgesParent.transform);
                         newBadget.TryGetComponent(out Badge badge);
                         badge.UpdateBadgeInfo(t.BadgeName);
-                        badges.Add(newBadget);
+                        /////////////////////////////////////////////////////////////////
+                        badge.BadgeImage.sprite = await DownloadSprite(t.BadgeImgURL);
                         
+                        badges.Add(newBadget);
+
                         // TODO: Change with the URL
                         //badges[i].BadgeImage.sprite = await DownloadSprite(badgesFromFirestore[i].BadgeName);
                     }
@@ -127,7 +130,7 @@ namespace Managers
             });
         }
 
-        private async Task<Sprite> DownloadSprite(string url)
+        public async Task<Sprite> DownloadSprite(string url)
         {
             using UnityWebRequest request = UnityWebRequestTexture.GetTexture(url);
 
@@ -235,8 +238,15 @@ namespace Managers
     [FirestoreData]
     public class BadgeData
     {
-        [FirestoreProperty] public int BadgeID { get; set; }
-        [FirestoreProperty] public string BadgeName { get; set; }
+        [FirestoreProperty]
+        public int BadgeID { get; set; }
+        
+        [FirestoreProperty]
+        public string BadgeName { get; set; }
+
+        [FirestoreProperty]
+        public string BadgeImgURL { get; set; }
+
 
         public BadgeData()
         {
