@@ -639,7 +639,7 @@ PrefabInstance:
     - target: {fileID: 4621736237978493796, guid: 09e89bcff27c6554fa0235fe0f9e2774, type: 3}
       propertyPath: badgePrefab
       value: 
-      objectReference: {fileID: 1050377126}
+      objectReference: {fileID: 8557864251391521583, guid: a4aa9c89633ef0440888688c89e7a907, type: 3}
     - target: {fileID: 4621736237978493796, guid: 09e89bcff27c6554fa0235fe0f9e2774, type: 3}
       propertyPath: badgesParent
       value: 
